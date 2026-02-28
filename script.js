@@ -82,7 +82,8 @@ const restartBtn = document.getElementById('restartBtn');
 
 // --- Variables del juego ---
 let score = 0;
-let ducksRemaining = 5;
+let ducksEscaped = 0;      // Patos que han escapado (para modo infinito)
+const MAX_ESCAPED = 5;      // Juego termina cuando escapan 5
 let gameActive = false;
 let ducks = [];
 let crosshair = { x: 0, y: 0 };
@@ -132,7 +133,7 @@ class Duck {
         }
         
         this.y = 145 + Math.random() * 150; // altura aleatoria
-        this.speed = 2 + Math.random() * 3;
+        this.speed = 2 + Math.random() * 4;
         this.radius = 30; // radio de colisión
         this.alive = true;
         this.frame = 0;
@@ -170,8 +171,8 @@ class Duck {
             (this.vx === -1 && this.x < -50) ||
             this.y < -50) {
             this.alive = false;
-            ducksRemaining--;
-            if (ducksRemaining < 0) ducksRemaining = 0;
+            ducksEscaped++;
+            if (ducksEscaped > MAX_ESCAPED) ducksEscaped = MAX_ESCAPED;
             // Mostrar perro cuando el pato escapa
             if (dog) dog.showLaugh();
             updateUI();
@@ -234,9 +235,9 @@ class Dog {
         this.visible = true;    
         this.state = 'laugh'; // Usar animación de risa
         this.x = canvas.width / 2;
-        this.startY = canvas.height -20; // Empieza abajo de la escena
+        this.startY = canvas.height -40; // Empieza abajo de la escena
         this.y = this.startY;
-        this.targetY = canvas.height -100; // Salta hasta los arbustos
+        this.targetY = canvas.height -130; // Salta hasta los arbustos
         this.animationFrame = 0;
         this.timer = 100;
         this.jumping = true;
@@ -247,9 +248,9 @@ class Dog {
         this.visible = true;
         this.state = 'single'; // Usar animación de pato capturado
         this.x = canvas.width / 2;
-        this.startY = canvas.height -20; // Empieza abajo de la escena
+        this.startY = canvas.height -40; // Empieza abajo de la escena
         this.y = this.startY;
-        this.targetY = canvas.height -100; // Salta hasta los arbustos
+        this.targetY = canvas.height -130; // Salta hasta los arbustos
         this.animationFrame = 0;
         this.timer = 90;
         this.jumping = true;
@@ -305,7 +306,7 @@ class Dog {
         }
 
         if (spriteImg && spriteImg.complete && spriteImg.naturalWidth > 0) {
-            ctx.drawImage(spriteImg, -32, -40, 64, 64);
+            ctx.drawImage(spriteImg, -32, -40, 100, 100);
         } else {
             // Fallback: dibujar perro simple
             ctx.fillStyle = '#8B4513';
@@ -359,19 +360,20 @@ class EfectoDisparo {
 
 // --- Funciones auxiliares ---
 function spawnDuck() {
-    if (ducks.length === 0 && gameActive && ducksRemaining > 0) {
+    // Modo infinito: siempre spawnear cuando no hay patos
+    if (ducks.length === 0 && gameActive && ducksEscaped < MAX_ESCAPED) {
         ducks.push(new Duck());
     }
 }
 
 function updateUI() {
     scoreSpan.textContent = score;
-    ducksLeftSpan.textContent = ducksRemaining;
+    ducksLeftSpan.textContent = ducksEscaped + ' / ' + MAX_ESCAPED;
 }
 
 function resetGame() {
     score = 0;
-    ducksRemaining = 5;
+    ducksEscaped = 0;
     ducks = [];
     efectos = [];
     gameActive = true;
@@ -419,7 +421,6 @@ function handleShoot(e) {
             duck.kill();
             duck.showDogWhenDead = true; // Mostrar perro cuando caiga
             score++;
-            ducksRemaining--;
             updateUI();
             impacto = true;
             break;
@@ -436,14 +437,14 @@ function handleShoot(e) {
     }
     // Si acertaste, el perro aparecerá cuando el pato caiga (en Duck.update)
 
-    // Si no quedan patos vivos y aún hay patos restantes, spawnear otro
+    // Si no quedan patos vivos, spawnear otro (infinito)
     const aliveDucks = ducks.filter(d => d.state === 'alive');
-    if (aliveDucks.length === 0 && ducksRemaining > 0 && gameActive) {
+    if (aliveDucks.length === 0 && gameActive) {
         spawnDuck();
     }
 
-    // Verificar game over al final de cada disparo
-    if (ducksRemaining <= 0) {
+    // Verificar game over: cuando escapen 5 patos
+    if (ducksEscaped >= MAX_ESCAPED) {
         gameActive = false;
         mostrarGameOver();
     }
@@ -494,7 +495,8 @@ function gameLoop() {
         ducks.forEach(duck => duck.update());
         // Eliminar patos muertos (que ya no están vivos)
         ducks = ducks.filter(duck => duck.alive);
-        if (ducks.length === 0 && ducksRemaining > 0 && gameActive) {
+        // Siempre spawnear nuevo pato (modo infinito)
+        if (ducks.length === 0 && gameActive) {
             spawnDuck();
         }
     }
@@ -522,7 +524,7 @@ function gameLoop() {
     // Árboles
     if (sprites.scene.tree && sprites.scene.tree.complete && sprites.scene.tree.naturalWidth > 0) {
         ctx.drawImage(sprites.scene.tree, 30, canvas.height - 130, 100, 100);
-        ctx.drawImage(sprites.scene.tree, 670, canvas.height - 140, 100, 100);
+        ctx.drawImage(sprites.scene.tree, 670, canvas.height - 180, 120, 150);
     }
 
 
