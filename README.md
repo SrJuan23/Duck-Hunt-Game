@@ -2,6 +2,7 @@
 
 A classic Duck Hunt game built with HTML5 Canvas.
 
+[Play the game](https://srjuan23.github.io/Duck-Hunt-Game/)
 ## How to Play
 
 ### On Desktop
@@ -18,12 +19,5 @@ A classic Duck Hunt game built with HTML5 Canvas.
 - **Infinite Mode**: Ducks spawn infinitely
 - **Game Over**: When 5 ducks escape
 
-## GitHub Pages
-This game is deployed at: https://[tu-usuario].github.io/Duck-Hunter-Game/
-
-To enable GitHub Pages:
-1. Go to Repository Settings
-2. Select "Pages" from the sidebar
-3. Under "Build and deployment" > "Source", select "Deploy from a branch"
-4. Select "main" branch and "/(root)" folder
-5. Click Save
+## Sources
+https://github.com/MattSurabian/DuckHunt-JS/tree/master
