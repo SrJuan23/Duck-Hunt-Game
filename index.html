@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Duck Hunt</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>🦆 DUCK HUNT</h1>
+    <div class="game-wrapper">
+        <canvas id="gameCanvas"></canvas>
+        <!-- Menú de inicio -->
+        <div id="menu" class="menu">
+            <h2>DUCK HUNT</h2>
+            <button id="startBtn">🎮 JUGAR</button>
+        </div>
+        <!-- Menú de game over -->
+        <div id="gameOver" class="menu" style="display: none;">
+            <h2>GAME OVER</h2>
+            <p class="score-label">PUNTUACIÓN</p>
+            <p class="final-score" id="finalScore">0</p>
+            <button id="restartBtn">🔄 VOLVER A JUGAR</button>
+        </div>
+    </div>
+    <div class="info">
+        <p>Puntuación: <span id="score">0</span></p>
+        <p>Patos restantes: <span id="ducksLeft">5</span></p>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
