@@ -32,11 +32,6 @@ const sprites = {
         single: null,
         double: null
     },
-    hud: {
-        bullet: null,
-        scoreDead: null,
-        scoreLive: null
-    }
 };
 
 // Cargar sprites de forma síncrona (cacheando las imágenes)
@@ -65,23 +60,10 @@ function loadSprites() {
     sprites.scene.tree = loadImage('assets/images/scene/tree/0.png');
 
     // Cargar dog
-    sprites.dog.find = loadImage('assets/images/dog/find/0.png');
-    sprites.dog.jump[0] = loadImage('assets/images/dog/jump/0.png');
-    sprites.dog.jump[1] = loadImage('assets/images/dog/jump/1.png');
     sprites.dog.laugh[0] = loadImage('assets/images/dog/laugh/0.png');
     sprites.dog.laugh[1] = loadImage('assets/images/dog/laugh/1.png');
-    sprites.dog.sniff[0] = loadImage('assets/images/dog/sniff/0.png');
-    sprites.dog.sniff[1] = loadImage('assets/images/dog/sniff/1.png');
-    sprites.dog.sniff[2] = loadImage('assets/images/dog/sniff/2.png');
-    sprites.dog.sniff[3] = loadImage('assets/images/dog/sniff/3.png');
-    sprites.dog.sniff[4] = loadImage('assets/images/dog/sniff/4.png');
     sprites.dog.single = loadImage('assets/images/dog/single/0.png');
     sprites.dog.double = loadImage('assets/images/dog/double/0.png');
-
-    // Cargar HUD
-    sprites.hud.bullet = loadImage('assets/images/hud/bullet/0.png');
-    sprites.hud.scoreDead = loadImage('assets/images/hud/score-dead/0.png');
-    sprites.hud.scoreLive = loadImage('assets/images/hud/score-live/0.png');
 }
 
 // Iniciar carga de sprites
@@ -100,11 +82,12 @@ const restartBtn = document.getElementById('restartBtn');
 
 // --- Variables del juego ---
 let score = 0;
-let ducksRemaining = 5;      // Número de patos a cazar
-let gameActive = false;      // Controla si el juego está en curso (no el menú)
+let ducksRemaining = 5;
+let gameActive = false;
 let ducks = [];
 let crosshair = { x: 0, y: 0 };
-let efectos = [];            // Para los efectos de disparo
+let efectos = [];
+let dog = null; // Perro del juego
 
 // --- Configuración del canvas ---
 canvas.width = 800;
@@ -132,11 +115,11 @@ class Duck {
         } else if (rand < 0.75) {
             this.flyDirection = 'top-right';
             this.vx = 1;
-            this.vy = -0.5; // Move upward
+            this.vy = -0.4; // Move upward
         } else {
             this.flyDirection = 'top-left';
             this.vx = -1;
-            this.vy = -0.5; // Move upward
+            this.vy = -0.4; // Move upward
         }
         
         // Dirección horizontal para posición inicial
@@ -148,7 +131,7 @@ class Duck {
             this.x = canvas.width + 60; // aparece por derecha
         }
         
-        this.y = 100 + Math.random() * 150; // altura aleatoria
+        this.y = 145 + Math.random() * 150; // altura aleatoria
         this.speed = 2 + Math.random() * 3;
         this.radius = 30; // radio de colisión
         this.alive = true;
@@ -156,6 +139,7 @@ class Duck {
         this.animationFrame = 0;
         this.state = 'alive';
         this.deadY = this.y;
+        this.showDogWhenDead = false; // Controla si mostrar perro al caer
         this.deadSpeed = 2;
     }
 
@@ -165,6 +149,10 @@ class Duck {
             this.deadY += this.deadSpeed;
             if (this.deadY > canvas.height + 50) {
                 this.alive = false;
+                // Mostrar perro con el pato cuando cae
+                if (this.showDogWhenDead && dog) {
+                    dog.showSingle();
+                }
             }
             return;
         }
@@ -184,6 +172,8 @@ class Duck {
             this.alive = false;
             ducksRemaining--;
             if (ducksRemaining < 0) ducksRemaining = 0;
+            // Mostrar perro cuando el pato escapa
+            if (dog) dog.showLaugh();
             updateUI();
         }
     }
@@ -225,6 +215,113 @@ class Duck {
         this.deadY = this.y;
     }
 }
+
+// --- Clase Perro ---
+class Dog {
+    constructor() {
+        this.x = canvas.width / 2;
+        this.y = canvas.height - 40;
+        this.state = 'hidden'; // hidden, sniff, find, laugh, jump, single
+        this.frame = 0;
+        this.animationFrame = 0;
+        this.visible = false;
+        this.timer = 0;
+    }
+
+
+    // Mostrar animación de risa cuando se falla un disparo
+    showLaugh() {
+        this.visible = true;    
+        this.state = 'laugh'; // Usar animación de risa
+        this.x = canvas.width / 2;
+        this.startY = canvas.height -20; // Empieza abajo de la escena
+        this.y = this.startY;
+        this.targetY = canvas.height -100; // Salta hasta los arbustos
+        this.animationFrame = 0;
+        this.timer = 100;
+        this.jumping = true;
+    }
+
+    // Mostrar perro con pato cuando se captura
+    showSingle() {
+        this.visible = true;
+        this.state = 'single'; // Usar animación de pato capturado
+        this.x = canvas.width / 2;
+        this.startY = canvas.height -20; // Empieza abajo de la escena
+        this.y = this.startY;
+        this.targetY = canvas.height -100; // Salta hasta los arbustos
+        this.animationFrame = 0;
+        this.timer = 90;
+        this.jumping = true;
+    }
+
+    hide() {
+        this.visible = false;
+        this.state = 'hidden';
+        this.jumping = false;
+    }
+
+    update() {
+        if (!this.visible) return;
+
+        this.timer--;
+        this.frame++;
+        
+        // Animación basada en el estado
+        if (this.state === 'find' || this.state === 'single') {
+            this.animationFrame = 0;
+        } else if (this.state === 'laugh') {
+            this.animationFrame = Math.floor(this.frame / 15) % 2;
+        }
+
+        // Animación de salto
+        if (this.jumping && this.y > this.targetY) {
+            this.y -= 3; // Velocidad del salto
+            if (this.y < this.targetY) {
+                this.y = this.targetY;
+                this.jumping = false;
+            }
+        }
+
+        if (this.timer <= 0) {
+            this.hide();
+        }
+    }
+
+    draw() {
+        if (!this.visible) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        let spriteImg = null;
+
+        if (this.state === 'find') {
+            spriteImg = sprites.dog.find;
+        } else if (this.state === 'laugh') {
+            spriteImg = sprites.dog.laugh[this.animationFrame];
+        } else if (this.state === 'single') {
+            spriteImg = sprites.dog.single;
+        }
+
+        if (spriteImg && spriteImg.complete && spriteImg.naturalWidth > 0) {
+            ctx.drawImage(spriteImg, -32, -40, 64, 64);
+        } else {
+            // Fallback: dibujar perro simple
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-20, -20, 40, 30);
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.arc(-10, -25, 12, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+}
+
+// Inicializar perro después de definir la clase
+dog = new Dog();
 
 // --- Clase EfectoDisparo ---
 class EfectoDisparo {
@@ -282,6 +379,8 @@ function resetGame() {
     // Ocultar menús
     menuDiv.style.display = 'none';
     gameOverDiv.style.display = 'none';
+    // Ocultar perro
+    if (dog) dog.hide();
     // Spawnear primer pato
     spawnDuck();
 }
@@ -318,6 +417,7 @@ function handleShoot(e) {
         const duck = ducks[i];
         if (duck.hitTest(canvasX, canvasY)) {
             duck.kill();
+            duck.showDogWhenDead = true; // Mostrar perro cuando caiga
             score++;
             ducksRemaining--;
             updateUI();
@@ -328,6 +428,13 @@ function handleShoot(e) {
 
     // Añadir efecto visual
     efectos.push(new EfectoDisparo(canvasX, canvasY, impacto));
+
+    // Reacciones del perro
+    if (!impacto) {
+        // Fallaste el disparo - perro se ríe
+        if (dog) dog.showLaugh();
+    }
+    // Si acertaste, el perro aparecerá cuando el pato caiga (en Duck.update)
 
     // Si no quedan patos vivos y aún hay patos restantes, spawnear otro
     const aliveDucks = ducks.filter(d => d.state === 'alive');
@@ -395,6 +502,14 @@ function gameLoop() {
     // Dibujar - siempre dibujar el fondo, pero solo dibujar elementos del juego si está activo
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Perro (detrás del suelo/arbustos)
+    if (dog) {
+        dog.update();
+        dog.draw();
+    }
+
+    ducks.forEach(duck => duck.draw());
+    
     // Fondo
     if (sprites.scene.back && sprites.scene.back.complete && sprites.scene.back.naturalWidth > 0) {
         ctx.drawImage(sprites.scene.back, 0, 0, canvas.width, canvas.height);
@@ -410,12 +525,9 @@ function gameLoop() {
         ctx.drawImage(sprites.scene.tree, 670, canvas.height - 140, 100, 100);
     }
 
-    // Suelo
-    ctx.fillStyle = '#2e8b57';
-    ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
 
     // Patos - solo dibujar si hay patos vivos o en animación de muerte
-    ducks.forEach(duck => duck.draw());
+
 
     // Efectos de disparo
     for (let i = efectos.length - 1; i >= 0; i--) {
