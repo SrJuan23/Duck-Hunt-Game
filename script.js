@@ -69,6 +69,28 @@ function loadSprites() {
 // Iniciar carga de sprites
 loadSprites();
 
+// --- Audio ---
+let backgroundMusic = null;
+
+function initAudio() {
+    backgroundMusic = new Audio('assets/moodmode-retro-game-arcade-short-236130.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = 0.5;
+}
+
+function playMusic() {
+    if (backgroundMusic) {
+        backgroundMusic.play().catch(e => console.log('Audio autoplay blocked'));
+    }
+}
+
+function stopMusic() {
+    if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+    }
+}
+
 // --- Elementos del DOM ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -378,6 +400,8 @@ function resetGame() {
     efectos = [];
     gameActive = true;
     updateUI();
+    // Reproducir música
+    playMusic();
     // Ocultar menús
     menuDiv.style.display = 'none';
     gameOverDiv.style.display = 'none';
@@ -389,6 +413,7 @@ function resetGame() {
 
 function mostrarGameOver() {
     gameActive = false;
+    stopMusic();
     finalScoreSpan.textContent = score;
     gameOverDiv.style.display = 'flex';
 }
