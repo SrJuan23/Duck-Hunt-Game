@@ -2,7 +2,7 @@
 
 A classic Duck Hunt game built with HTML5 Canvas.
 
-[Play the game]([https://duckhuntjs.com](https://srjuan23.github.io/Duck-Hunt-Game/))
+[Play the game](https://srjuan23.github.io/Duck-Hunt-Game/)
 ## How to Play
 
 ### On Desktop
