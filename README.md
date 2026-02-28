@@ -1,7 +1,7 @@
 # Duck Hunt Game
 
 A classic Duck Hunt game built with HTML5 Canvas.
-##[Play the game](https://duckhuntjs.com)
+[Play the game](https://duckhuntjs.com)
 ## How to Play
 
 ### On Desktop
